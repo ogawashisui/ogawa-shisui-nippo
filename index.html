@@ -111,4 +111,8 @@ h+='<tr class="bottomrow">'+td('SPT','colspan="2"')+day('spt')+tot('spt','回')+
 (function(){let original=weekPrint;weekPrint=function(){original();let t=el('printTable');let heights=[4,5,5,4,48,48,4,7,10,8,8];[...t.rows].forEach((r,i)=>r.style.setProperty('--rh',heights[i]+'mm'));let c=t.querySelectorAll('col');let widths=[2.5,2.5,8.9,8.9,8.9,8.9,8.9,8.9,8.9,10.9,10.9,10.9];c.forEach((v,i)=>v.style.width=widths[i]+'%');let v=t.querySelectorAll('.vertical');if(v[0])v[0].textContent='作\n\n業\n\n内\n\n容';if(v[1])v[1].textContent='午\n\n\n前';if(v[2])v[2].textContent='午\n\n\n後';};})();
 
 let prev=prepare;prepare=function(mode){if(mode!=='weekly')return prev(mode);printMode='weekly';document.querySelectorAll('#print>.printmeta,#print>.muted,#print>.extra,#print>.reportfooter,#print>.weekheading').forEach(x=>x.remove());el('paper').textContent='@page{size:257mm 182mm;margin:8mm}';weekPrint()};})();
-</script></body></html>
+</script><style>
+#previewContent .weekheading,#print .weekheading{display:flex!important;align-items:center!important;height:auto!important;min-height:9mm!important;line-height:1.35!important;box-sizing:border-box!important;padding:1mm 0 2mm!important;margin:0 0 2mm!important;position:static!important;gap:2mm!important;flex-wrap:nowrap!important}
+.weekheading .subject{min-width:0;overflow-wrap:anywhere;white-space:normal}.weekheading strong,.weekheading .leader{flex-shrink:0}.weekheading + .week-original{clear:both;margin-top:0!important}
+@media print{#print .weekheading{min-height:8mm!important}#print .week-original{height:150mm!important}}
+</style></body></html>
