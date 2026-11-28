@@ -35,4 +35,29 @@ addRun({from:prior()?.depthEnd??''});
 </script><script>
 function appTab(n){if(typeof closePreview==='function')closePreview();let sections=[...document.querySelectorAll('main>section')];sections.forEach((s,i)=>s.hidden=n===0?i>=sections.length-2:n===1?i!==sections.length-1:i!==sections.length-2);scrollTo(0,0)}
 let installEvent;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvent=e;document.getElementById('installApp').hidden=false});document.getElementById('installApp').onclick=async()=>{if(installEvent){await installEvent.prompt();installEvent=null;document.getElementById('installApp').hidden=true}};window.addEventListener('appinstalled',()=>document.getElementById('installApp').hidden=true);if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(console.error));appTab(0);
+</script><style>
+.week-original{width:100%;border-collapse:collapse;table-layout:fixed;font-family:serif;font-size:12px;color:#000}.week-original td,.week-original th{border:1px solid #333!important;padding:2px!important;font-weight:normal;vertical-align:middle;text-align:center;white-space:pre-wrap;overflow-wrap:anywhere}.week-original .workcell{text-align:left;vertical-align:top}.week-original .vertical{writing-mode:vertical-rl;letter-spacing:.5em}.week-original .am,.week-original .pm{height:46mm}.week-original .geology{vertical-align:top;text-align:left}.week-original .smallrow{height:5mm}.week-original .bottomrow{height:7mm}.week-original .unit{text-align:right;vertical-align:bottom}.weekheading{display:flex;align-items:baseline;gap:4px;border-bottom:1px solid #333;font-family:serif}.weekheading strong{font-size:18px}.weekheading .subject{flex:1}.weekheading .leader{width:22%}#previewContent:has(.week-original){min-width:850px} @media print{#print .week-original{font-size:9px!important;width:100%;height:155mm}#print .week-original td,#print .week-original th{padding:1px!important;border:.5pt solid #333!important}#print .week-original .am,#print .week-original .pm{height:45mm!important}#print .weekheading{font-size:10px}#print .weekheading strong{font-size:14px}#print:has(.week-original) #printTitle{display:none}}
+</style><script>
+(function(){
+const sunday=d=>{let x=new Date((d||iso(new Date()))+'T12:00:00');x.setDate(x.getDate()-x.getDay());return iso(x)};
+el('weekDate').value=sunday(iso(new Date()));let wl=el('weekDate').previousElementSibling;if(wl)wl.textContent='対象週（日曜日から）';
+shiftWeek=function(n){let x=new Date((el('weekDate').value||iso(new Date()))+'T12:00:00');x.setDate(x.getDate()+n);el('weekDate').value=sunday(iso(x))};
+let extra=document.createElement('div');extra.innerHTML='<label>助手</label><input id="assistantName"><label>原位置試験（回）</label><input id="inSitu" type="number" min="0">';el('tws').closest('.two').after(extra);fields.push('assistantName','inSitu');
+weekPrint=function(){let d=read(),m=sunday(el('weekDate').value||d.date);el('weekDate').value=m;let dates=Array.from({length:7},(_,i)=>{let x=new Date(m+'T12:00:00');x.setDate(x.getDate()+i);return iso(x)});let rec=all().filter(x=>x.project===d.project&&x.site===d.site&&(!d.hole||x.hole===d.hole)).sort((a,b)=>a.date.localeCompare(b.date));let cols=dates.map(date=>rec.filter(x=>x.date===date)),week=cols.flat(),cum=rec.filter(x=>x.date<=dates[6]);let esc=escapeHtml,td=(v,attr='')=>'<td '+attr+'>'+esc(v)+'</td>',join=(a,k)=>a.map(x=>x[k]||'').filter(Boolean).join('\n'),sum=(a,k)=>a.reduce((n,x)=>n+(Number(x[k])||0),0),day=(k,attr='')=>cols.map(a=>td(join(a,k),attr)).join(''),tot=(k,unit,decimal=false)=>[week,cum].map(a=>td((decimal?sum(a,k).toFixed(2):sum(a,k))+' '+unit,'class="unit"')).join('');
+let layers=[...new Set(week.flatMap(x=>[...(x.runs||[]).map(r=>r.layer),x.layer]).filter(Boolean))];let geology=[0,1,2].map(i=>td(layers[i]||'','class="geology" rowspan="'+(i===0?10:5)+'"')).join('');
+el('printTitle').textContent='週報';document.querySelectorAll('#print>.weekheading').forEach(x=>x.remove());el('printTitle').insertAdjacentHTML('afterend','<div class="weekheading"><strong>週報</strong><span>件名</span><span class="subject">'+esc(d.project)+'</span><span class="leader">責任者　'+esc(d.person)+'</span></div>');
+let h='<table id="printTable" class="week-original"><colgroup><col style="width:2.5%"><col style="width:2.5%">'+ '<col style="width:9%">'.repeat(7)+'<col style="width:10.666%">'.repeat(3)+'</colgroup>';
+h+='<tr class="smallrow">'+td('曜 日','colspan="2"')+[...'日月火水木金土'].map(v=>td(v)).join('')+td('地 層').repeat(3)+'</tr>';
+h+='<tr class="smallrow">'+td('天 候','colspan="2"')+day('weather')+geology+'</tr>';
+h+='<tr class="smallrow">'+td('月 日','colspan="2"')+dates.map(v=>td(Number(v.slice(5,7))+'/'+Number(v.slice(8)))).join('')+'</tr>';
+h+='<tr class="smallrow">'+td('作業内容','rowspan="4" class="vertical"')+td('時間')+day('startTime')+'</tr>';
+h+='<tr class="am">'+td('午 前','class="vertical"')+day('amWork','class="workcell"')+'</tr>';
+h+='<tr class="pm">'+td('午 後','class="vertical"')+day('pmWork','class="workcell"')+'</tr>';
+h+='<tr class="smallrow">'+td('時間')+day('endTime')+td('計')+td('累計')+'</tr>';
+h+='<tr class="bottomrow">'+td('助 手','colspan="2"')+day('assistantName')+tot('advance','m',true)+'</tr>';
+h+='<tr class="bottomrow">'+td('原位置\n試験','colspan="2"')+day('inSitu')+tot('inSitu','回')+'</tr>';
+h+='<tr class="bottomrow">'+td('TWS','colspan="2"')+day('tws')+tot('tws','本')+'</tr>';
+h+='<tr class="bottomrow">'+td('SPT','colspan="2"')+day('spt')+tot('spt','回')+'</tr></table>';el('printTable').outerHTML=h};
+let oldPrepare=prepare;prepare=function(mode){document.querySelectorAll('#print>.weekheading').forEach(x=>x.remove());oldPrepare(mode);if(mode==='weekly')el('paper').textContent='@page{size:257mm 182mm;margin:8mm}'};
+})();
 </script></body></html>
